@@ -58,29 +58,23 @@ if not exist "!PLUGIN_DIR!\.millennium\Dist" mkdir "!PLUGIN_DIR!\.millennium\Dis
 if not exist "!PLUGIN_DIR!\Dist" mkdir "!PLUGIN_DIR!\Dist"
 if not exist "!PLUGIN_DIR!\frontend" mkdir "!PLUGIN_DIR!\frontend"
 
-:: 4. Copiar archivos si existen localmente o descargarlos desde GitHub
+:: 4. Copiar archivos si existen localmente o descargarlos desde GitHub (solo archivos del plugin)
 set "SRC_DIR=%~dp0"
 if exist "!SRC_DIR!plugin.json" (
-    echo [*] Copiando archivos locales...
+    echo [*] Copiando archivos esenciales del plugin...
     copy /y "!SRC_DIR!plugin.json" "!PLUGIN_DIR!\plugin.json" >nul
     copy /y "!SRC_DIR!index.js" "!PLUGIN_DIR!\index.js" >nul
     copy /y "!SRC_DIR!frontend\index.js" "!PLUGIN_DIR!\frontend\index.js" >nul
     copy /y "!SRC_DIR!Dist\index.js" "!PLUGIN_DIR!\Dist\index.js" >nul
     copy /y "!SRC_DIR!.millennium\Dist\index.js" "!PLUGIN_DIR!\.millennium\Dist\index.js" >nul
-    if exist "!SRC_DIR!README.md" copy /y "!SRC_DIR!README.md" "!PLUGIN_DIR!\README.md" >nul
-    if exist "!SRC_DIR!LICENSE" copy /y "!SRC_DIR!LICENSE" "!PLUGIN_DIR!\LICENSE" >nul
-    if exist "!SRC_DIR!AGENTS.md" copy /y "!SRC_DIR!AGENTS.md" "!PLUGIN_DIR!\AGENTS.md" >nul
 ) else (
-    echo [*] Descargando archivos oficiales desde GitHub...
+    echo [*] Descargando unicamente los archivos del plugin desde GitHub...
     set "REPO_URL=https://raw.githubusercontent.com/Aitor2010aitor/Steam-DLC-Switcher/main"
     curl -s -L "!REPO_URL!/plugin.json" -o "!PLUGIN_DIR!\plugin.json"
     curl -s -L "!REPO_URL!/index.js" -o "!PLUGIN_DIR!\index.js"
     curl -s -L "!REPO_URL!/frontend/index.js" -o "!PLUGIN_DIR!\frontend\index.js"
     curl -s -L "!REPO_URL!/Dist/index.js" -o "!PLUGIN_DIR!\Dist\index.js"
     curl -s -L "!REPO_URL!/.millennium/Dist/index.js" -o "!PLUGIN_DIR!\.millennium\Dist\index.js"
-    curl -s -L "!REPO_URL!/README.md" -o "!PLUGIN_DIR!\README.md"
-    curl -s -L "!REPO_URL!/LICENSE" -o "!PLUGIN_DIR!\LICENSE"
-    curl -s -L "!REPO_URL!/AGENTS.md" -o "!PLUGIN_DIR!\AGENTS.md"
 )
 
 :: 5. Activar automaticamente en config.json de Millennium

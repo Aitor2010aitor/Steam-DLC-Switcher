@@ -1,0 +1,9 @@
+{
+  "name": "steam_dlc_switcher",
+  "common_name": "Steam DLC Switcher",
+  "description": "Añade botones para activar o desactivar todos los DLCs de un juego de golpe.",
+  "author": "Aitor",
+  "version": "2.1.0",
+  "useBackend": false,
+  "frontend": "index.js"
+}

@@ -18,7 +18,7 @@
 
 ## 📦 Instalación Rápida (Recomendada)
 
-1. Asegúrate de tener instalado **[Millennium para Steam](https://millennium.app/)**.
+1. Asegúrate de tener instalado **[Millennium para Steam](https://docs.steambrew.app/users/getting-started/installation)**.
 2. Descarga este repositorio (o el archivo [`install.bat`](install.bat)).
 3. Ejecuta **`install.bat`** haciendo doble clic.
    - Detectará automáticamente tu instalación de Steam.

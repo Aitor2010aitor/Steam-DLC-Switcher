@@ -1,6 +1,6 @@
 # Steam DLC Switcher (Steam Millennium Plugin)
 
-**Steam DLC Switcher** es un complemento para Steam (usando [Millennium](https://millennium.app/)) que añade botones interactivos para **activar o desactivar todos los DLCs** de cualquier juego con un solo clic en la ventana de Propiedades.
+**Steam DLC Switcher** es un complemento para Steam (usando [Millennium](https://docs.steambrew.app/users/getting-started/installation) que añade botones interactivos para **activar o desactivar todos los DLCs** de cualquier juego con un solo clic en la ventana de Propiedades.
 
 ---
 

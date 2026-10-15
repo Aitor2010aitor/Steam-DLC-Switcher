@@ -1,0 +1,9 @@
+{
+  "name": "steam_dlc_switcher",
+  "common_name": "Steam DLC Switcher",
+  "description": "Activa o desactiva todos los DLCs y permite exportar e importar listas.",
+  "author": "Aitor",
+  "version": "0.2.0",
+  "useBackend": false,
+  "frontend": "index.js"
+}

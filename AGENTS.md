@@ -84,6 +84,24 @@ Guárdalas **fuera** de `millennium\plugins\`. Si creas `plugins\_backup\steam_d
 con un `plugin.json` dentro, Millennium lo carga como **otro plugin** y vuelven a aparecer los
 botones duplicados. El `install.bat` las mete en `millennium\backup\`.
 
+### ⚠️ Plugins DUPLICADOS: una carpeta = una entrada en Millennium
+Millennium crea una entrada en *Complementos* por **cada carpeta** de `millennium\plugins\` que
+contenga un `plugin.json`. Si sobrevive una carpeta antigua con el mismo `name`, el plugin aparece
+**dos veces** en la lista y sus dos copias se ejecutan a la vez.
+
+Caso real registrado: apareció una carpeta llamada literalmente **`PLUGIN_ID`** (por una variable
+sin expandir en una versión previa del instalador) con una copia completa del plugin dentro.
+Resultado: dos "Steam DLC Switcher" en la UI de Millennium.
+
+`tools\cleanup-duplicates.ps1` lo previene: escanea todos los `plugin.json` de `plugins\`,
+compara su campo `name` y mueve a `backup\` los que no están en la carpeta canónica. **Nunca
+borra**: los aparta con versión y fecha por si hay que recuperar algo.
+
+El `install.bat` lo llama automáticamente en la opción `[1]` (después de copiar) y lo expone
+también como `[5] Limpiar instalaciones duplicadas`.
+
+**Regla: nunca dejes dos carpetas con el mismo campo `name` dentro de `plugins\`.**
+
 ---
 
 ## 3. Arquitectura del DOM de Steam (Propiedades > DLC)

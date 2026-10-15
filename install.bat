@@ -7,6 +7,7 @@ set "SCRIPT_DIR=%~dp0"
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 set "PLUGIN_ID=steam_dlc_switcher"
 set "PS_HELPER=%SCRIPT_DIR%\tools\enable-plugin.ps1"
+set "PS_CLEAN=%SCRIPT_DIR%\tools\cleanup-duplicates.ps1"
 
 echo ========================================================
 echo           STEAM DLC SWITCHER  -  INSTALADOR
@@ -67,6 +68,7 @@ echo   [1] Instalar / actualizar el plugin
 echo   [2] Activar el plugin en la config de Millennium
 echo   [3] Restaurar la copia de seguridad de config.json
 echo   [4] Desinstalar el plugin
+echo   [5] Limpiar instalaciones duplicadas
 echo   [0] Salir
 echo.
 set "OPTION="
@@ -76,6 +78,7 @@ if "!OPTION!"=="1" goto instalar
 if "!OPTION!"=="2" goto activar
 if "!OPTION!"=="3" goto restaurar
 if "!OPTION!"=="4" goto desinstalar
+if "!OPTION!"=="5" goto limpiar
 if "!OPTION!"=="0" goto :fin
 echo.
 echo Opcion no valida.
@@ -132,6 +135,7 @@ if "!VERIFY!"=="OK" (
 for /f "tokens=2 delims=:, " %%v in ('findstr /i "version" "!PLUGIN_DIR!\plugin.json"') do echo     version instalada: %%~v
 echo.
 
+call :limpiar
 call :activar
 echo.
 echo ========================================================
@@ -148,6 +152,17 @@ echo Si los botones siguen duplicados, es que Steam no se ha reiniciado bien.
 echo.
 pause
 goto menu
+
+rem =============================================================== LIMPIAR
+:limpiar
+echo.
+if not exist "!PS_CLEAN!" (
+    echo [aviso] No se encuentra "!PS_CLEAN!". Se omite la limpieza.
+    exit /b 0
+)
+powershell -NoProfile -ExecutionPolicy Bypass -File "!PS_CLEAN!" -PluginsDir "!MILLENNIUM_DIR!\plugins" -PluginName "!PLUGIN_ID!" -CanonicalFolder "!PLUGIN_ID!" -BackupDir "!MILLENNIUM_DIR!\backup"
+echo.
+exit /b 0
 
 rem =============================================================== ACTIVAR
 :activar

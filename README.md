@@ -97,6 +97,12 @@ te pasó el archivo tiene DLC que tú no has comprado.
 | `[2]` | Volver a activar el plugin en la config de Millennium |
 | `[3]` | Restaurar la copia de seguridad más reciente de `config.json` |
 | `[4]` | Desinstalar el plugin (deja la copia de seguridad) |
+| `[5]` | Limpiar instalaciones duplicadas |
+
+> **Instalaciones duplicadas:** si el plugin aparece **dos veces** en *Millennium > Complementos*,
+> es que hay dos carpetas con el mismo `name` dentro de `millennium\plugins\`. Ejecuta `[5]` (o
+> reinstala con `[1]`, que ya lo hace): aparta la copia sobrante a `millennium\backup\` y deja
+> solo la buena.
 
 ---
 

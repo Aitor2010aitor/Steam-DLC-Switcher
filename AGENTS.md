@@ -102,6 +102,38 @@ también como `[5] Limpiar instalaciones duplicadas`.
 
 **Regla: nunca dejes dos carpetas con el mismo campo `name` dentro de `plugins\`.**
 
+### ⚠️ BATCH: los `!` deben ir emparejados (causa del bug del plugin duplicado)
+Una línea como esta **NO expande nada**:
+```bat
+REM MAL: el ultimo ! no tiene pareja, cmd lo deja tal cual
+set "PLUGIN_DIR=!MILLENNIUM_DIR!\plugins\!PLUGIN_ID"
+
+REM BIEN
+set "PLUGIN_DIR=!MILLENNIUM_DIR!\plugins\!PLUGIN_ID!"
+```
+Cuando cmd no encuentra el `!` de cierre, **deja el texto literal**. Resultado: `PLUGIN_DIR`
+valía `...\plugins\PLUGIN_ID` en vez de `...\plugins\steam_dlc_switcher`, así que el instalador
+creaba una carpeta nueva llamada `PLUGIN_ID` con una copia del plugin y Millennium lo cargaba
+como un segundo plugin. El `plugins\steam_dlc_switcher` real se quedaba en su versión antigua.
+
+**Reglas para `install.bat`:**
+- Todo `!VAR!` va con pareja. Compruébalo: toda línea debe tener un número **par** de `!`.
+- Nunca uses `timeout /t` dentro de una rutina: falla si la entrada está redirigida. Usa
+  `ping -n 3 127.0.0.1 >nul`.
+- Nunca pongas un paréntesis sin escapar dentro de un bloque `if ( ... )`:
+  `echo     (no habia)` abre un bloque nuevo y rompe el `if/else` entero. Usa `^(` o reescribe.
+- Las rutinas (`call :label`) deben ir **después** de un `goto :menu`, o al caer se ejecutan
+  solas y el script termina antes de tiempo.
+
+### El instalador cierra y reabre Steam
+Los plugins no se recargan en caliente y los ficheros están bloqueados mientras corre Steam, así
+que la opción `[1]` hace, en este orden:
+1. `close_steam` → `steam.exe -shutdown`, espera activa hasta 40 s; si no cierra, pregunta antes
+   de hacer `taskkill /F`.
+2. Copia, verifica y limpia.
+3. `open_steam` → `start "" steam.exe`, espera 15 s y si no aparece reintenta con
+   `powershell Start-Process`.
+
 ---
 
 ## 3. Arquitectura del DOM de Steam (Propiedades > DLC)

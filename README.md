@@ -79,15 +79,18 @@ te pasó el archivo tiene DLC que tú no has comprado.
 
 ## 📦 Instalación Rápida (Recomendada)
 
-1. **Cierra Steam por completo** (bandeja del sistema → clic derecho → *Salir de Steam*). Los plugins no se recargan en caliente.
+1. Abre Steam normalmente. **No hace falta que cierres nada**: el instalador lo hace por ti.
 2. Asegúrate de tener instalado **[Millennium para Steam](https://docs.steambrew.app/users/getting-started/installation)**.
 3. Ejecuta **`install.bat`** haciendo doble clic y elige `[1] Instalar`.
+   - **Cierra Steam por ti** y espera a que termine. Si no se cierra solo, te preguntará si forzarlo.
    - Detecta automáticamente tu instalación de Steam.
    - Hace copia de seguridad de tu versión anterior en `millennium\backup\`.
    - Copia el plugin y verifica que las 4 rutas de `index.js` son idénticas.
+   - Limpia instalaciones duplicadas que encuentre en `millennium\plugins\`.
    - Activa el plugin en la configuración de Millennium **sin reescribir el resto del JSON**
      (guarda antes una copia en `config.json.bak-<fecha>`).
-4. Vuelve a abrir Steam y comprueba en *Millennium > Complementos* que aparece la versión nueva.
+   - **Vuelve a abrir Steam** al terminar.
+4. En los ajustes de Steam, *Millennium > Complementos*, activa el interruptor del plugin.
 
 ### Otras opciones del instalador
 

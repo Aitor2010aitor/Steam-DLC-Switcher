@@ -35,10 +35,10 @@ if not exist "!STEAMDIR!\steam.exe" (
 )
 
 set "MILLENNIUM_DIR=!STEAMDIR!\millennium"
-set "PLUGIN_DIR=!MILLENNIUM_DIR!\plugins\!PLUGIN_ID"
+set "PLUGIN_DIR=!MILLENNIUM_DIR!\plugins\!PLUGIN_ID!"
 set "CONFIG_FILE=!MILLENNIUM_DIR!\config\config.json"
 
-echo [*] Steam:    !STEAMDIR!
+echo [*] Steam:       !STEAMDIR!
 if exist "!MILLENNIUM_DIR!\lib\millennium.dll" (
     echo [*] Millennium: detectado
 ) else (
@@ -52,19 +52,96 @@ if exist "!MILLENNIUM_DIR!\lib\millennium.dll" (
 )
 echo.
 
-rem --------------------------------------------------------------- avisar si Steam sigue abierto
+rem Las routines de Steam van aqui pero NO deben ejecutarse al caer: se salta al menu.
+goto :menu
+
+rem =============================================================== RUTINAS DE STEAM
+:steam_running
 tasklist /fi "IMAGENAME eq steam.exe" 2>nul | find /i "steam.exe" >nul
-if not errorlevel 1 (
-    echo [aviso] Steam esta ABIERTO. Los plugins no se recargan en caliente.
-    echo     Debes cerrarlo por completo: bandeja del sistema ^> "Salir de Steam".
-    echo.
+if errorlevel 1 (set "STEAM_RUNNING=0") else (set "STEAM_RUNNING=1")
+exit /b 0
+
+rem Espera activa a que Steam termine de cerrar (maximo 40 s)
+rem Se usa ping y no timeout porque timeout falla si la entrada esta redirigida.
+:wait_steam_closed
+call :steam_running
+if "!STEAM_RUNNING!"=="0" exit /b 0
+if !WAITED! GEQ 40 exit /b 0
+ping -n 3 127.0.0.1 >nul
+set /a "WAITED+=2"
+call :wait_steam_closed
+exit /b 0
+
+rem Cierra Steam si esta abierto. Los plugins no se recargan en caliente y los
+rem ficheros estan bloqueados mientras corre, asi que va ANTES de copiar nada.
+:close_steam
+call :steam_running
+if "!STEAM_RUNNING!"=="0" (
+    echo     Steam ya estaba cerrado.
+    exit /b 0
 )
 
+echo     Cerrando Steam... ^(puede tardar unos segundos^)
+"!STEAMDIR!\steam.exe" -shutdown >nul 2>&1
+set "WAITED=0"
+call :wait_steam_closed
+
+call :steam_running
+if "!STEAM_RUNNING!"=="0" (
+    echo     [OK] Steam cerrado.
+    exit /b 0
+)
+
+echo     [aviso] Steam no se ha cerrado solo. Forzar el cierre?
+set "ANS="
+set /p "ANS=     Cerrar Steam a la fuerza? (s/N): "
+if /i not "!ANS!"=="s" (
+    echo     [aviso] Steam sigue abierto. Si la copia falla, cierralo y reintenta.
+    exit /b 0
+)
+taskkill /F /IM steamwebhelper.exe /T >nul 2>&1
+taskkill /F /IM steam.exe /T >nul 2>&1
+set "WAITED=0"
+call :wait_steam_closed
+call :steam_running
+if "!STEAM_RUNNING!"=="0" (echo     [OK] Steam cerrado.) else (echo     [X] No se ha podido cerrar Steam.)
+exit /b 0
+
+rem Vuelve a abrir Steam al terminar
+:open_steam
+call :steam_running
+if "!STEAM_RUNNING!"=="1" (
+    echo     Steam ya esta abierto.
+    exit /b 0
+)
+echo     Abriendo Steam...
+start "" "!STEAMDIR!\steam.exe"
+
+rem Si no aparece en 15 s, se reintenta con PowerShell
+set "WAITED=0"
+call :wait_steam_open
+call :steam_running
+if "!STEAM_RUNNING!"=="1" exit /b 0
+echo     [aviso] Reintentando con otro metodo...
+powershell -NoProfile -Command "Start-Process -FilePath '!STEAMDIR!\steam.exe'" >nul 2>&1
+exit /b 0
+
+rem Espera activa a que Steam aparezca (maximo 15 s)
+:wait_steam_open
+call :steam_running
+if "!STEAM_RUNNING!"=="1" exit /b 0
+if !WAITED! GEQ 15 exit /b 0
+ping -n 2 127.0.0.1 >nul
+set /a "WAITED+=1"
+call :wait_steam_open
+exit /b 0
+
+rem =============================================================== MENU
 :menu
 echo ========================================================
 echo                      QUE QUIERES HACER
 echo ========================================================
-echo   [1] Instalar / actualizar el plugin
+echo   [1] Instalar / actualizar el plugin   ^(cierra y reabre Steam^)
 echo   [2] Activar el plugin en la config de Millennium
 echo   [3] Restaurar la copia de seguridad de config.json
 echo   [4] Desinstalar el plugin
@@ -88,6 +165,9 @@ goto menu
 rem =============================================================== INSTALAR
 :instalar
 echo.
+call :close_steam
+echo.
+
 echo --- Copia de seguridad del plugin actual ---
 if exist "!PLUGIN_DIR!" (
     rem OJO: la copia va FUERA de plugins\, porque Millennium cargaria esa carpeta
@@ -97,7 +177,7 @@ if exist "!PLUGIN_DIR!" (
     xcopy "!PLUGIN_DIR!" "!BKDIR!\" /E /I /Q /Y >nul 2>&1
     if exist "!BKDIR!" (echo     [OK] Copia guardada en !BKDIR!) else (echo     [aviso] No se pudo hacer la copia)
 ) else (
-    echo     (no habia version anterior)
+    echo     - no habia version anterior
 )
 echo.
 
@@ -142,15 +222,13 @@ echo ========================================================
 echo        INSTALACION COMPLETADA
 echo ========================================================
 echo.
-echo PASOS QUE FALTAN:
-echo   1. Cierra Steam por COMPLETO:
-echo      bandeja del sistema ^> clic derecho ^> "Salir de Steam"
-echo   2. Vuelve a abrir Steam.
-echo   3. Millennium ^> Complementos: debe verse la version de arriba.
+echo Steam se va a abrir de nuevo. En sus ajustes, en
+echo Millennium ^> Complementos, activa "Steam DLC Switcher".
 echo.
-echo Si los botones siguen duplicados, es que Steam no se ha reiniciado bien.
+echo Si los botones siguen duplicados, ejecuta la opcion [5].
 echo.
 pause
+call :open_steam
 goto menu
 
 rem =============================================================== LIMPIAR
@@ -197,12 +275,14 @@ if /i not "!CONFIRM!"=="s" (
     echo     Cancelado.
     goto menu
 )
-copy /y "!MILLENNIUM_DIR%\config\!LATEST!" "!CONFIG_FILE!" >nul
+copy /y "!MILLENNIUM_DIR!\config\!LATEST!" "!CONFIG_FILE!" >nul
 echo     [OK] config.json restaurado.
 echo.
-echo     Cierra Steam por completo para que Millennium lo lea.
+echo Se cierra Steam para que Millennium lo lea al volver a abrirlo.
 echo.
 pause
+call :close_steam
+call :open_steam
 goto menu
 
 rem =============================================================== DESINSTALAR
@@ -215,6 +295,7 @@ if /i not "!CONFIRM!"=="s" (
     echo     Cancelado.
     goto menu
 )
+call :close_steam
 if exist "!PS_HELPER!" (
     powershell -NoProfile -ExecutionPolicy Bypass -File "!PS_HELPER!" -ConfigPath "!CONFIG_FILE!" -PluginName "!PLUGIN_ID!" -Disable
 )
@@ -225,9 +306,10 @@ if exist "!PLUGIN_DIR!" (
     echo     El plugin ya no estaba instalado.
 )
 echo.
-echo Cierra Steam por completo.
+echo Listo. Steam se vuelve a abrir.
 echo.
 pause
+call :open_steam
 goto menu
 
 :fin

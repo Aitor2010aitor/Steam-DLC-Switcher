@@ -10,10 +10,72 @@
 
 ---
 
+# 👋 Te han pasado una configuración de DLC
+
+Si alguien te ha enviado un archivo llamado **`steam-dlc-switcher.txt`**, esto es para ti.
+Ese archivo guarda **qué DLCs tiene activados esa persona** en un juego concreto, para que tú
+puedas replicarlo en tu Steam **sin marcar DLCs uno a uno**.
+
+## 1. Instala el complemento (solo la primera vez)
+
+1. **Cierra Steam por completo** (bandeja del sistema → clic derecho → *Salir de Steam*).
+2. Instala **[Millennium para Steam](https://docs.steambrew.app/users/getting-started/installation)** si aún no lo tienes.
+3. Ejecuta **`install.bat`** y elige `[1] Instalar`.
+4. Abre Steam de nuevo.
+
+## 2. Aplica la configuración
+
+1. Abre el juego **al que pertenece esa lista** en tu biblioteca.
+   ⚠️ La lista es de **un solo juego**: si te la pasaron para *Train Simulator*, úsala solo ahí.
+2. Clic derecho en el juego → **Propiedades** → pestaña **DLC**.
+3. Verás cuatro botones verdes/rojos encima de la lista. Pulsa **`Importar`**.
+4. Selecciona el archivo **`steam-dlc-switcher.txt`** que te pasaron.
+5. Listo. Abajo aparecerá un aviso verde con cuántos DLC se han activado.
+
+## 3. Qué hace y qué **no** hace
+
+| | |
+|---|---|
+| ✅ Activa | **Solo los DLC que tú ya tienes.** Los que no poseas se muestran como *no disponibles* y se saltan. |
+| ✅ Ignora | DLC que ya tenías activados (no los toca ni los duplica). |
+| ❌ No compra | **No se descarga ni se compra nada.** Sin credenciales, sin pagos, sin redes. |
+| ❌ No abre | No se abre ninguna web ni se envía nada a ningún servidor. Todo es local. |
+
+Al terminar verás un resumen con el detalle, por ejemplo:
+
+```
+Importados 9 DLC activados (5 ya estaban activos). 3 no disponibles: ...
+```
+
+Los *no disponibles* son DLC de la lista que tu cuenta no posee. Es lo esperado: indica que quien
+te pasó el archivo tiene DLC que tú no has comprado.
+
+## 4. Curiosidades del archivo
+
+Puedes abrirlo con el Bloc de notas. Es un texto plano y tiene este aspecto:
+
+```text
+Steam DLC Switcher export v1
+1050490	Class 08 Intercity Livery Add-On
+1050491	The Count of Monster Disco
+1050492	Train Simulator: London Overground BR Class 313 EMU Add-On
+```
+
+La primera línea es la cabecera, y cada línea siguiente lleva el **ID** del DLC y su **nombre**
+separados por un tabulador. Los números son los identificadores de Steam: si abres
+`https://store.steampowered.com/app/1050490/` en el navegador, llegarás a esa página de la tienda.
+
+## 5. Tus propias listas
+
+El botón **`Exportar`** hace lo inverso: genera ese archivo con **los DLC que tengas activados
+ahora mismo**. Úsalo para respaldar tu configuración o para pasársela a otro amigo.
+
+---
+
 ## 🚀 Características
 - **Un clic para todo:** Botones dedicados `[✓ Activar Todos]`, `[✕ Desactivar Todos]`, `[Exportar]` e `[Importar]`, sin menús ni ventanas intermedias.
 - **Compartir listas:** `[Exportar]` descarga un TXT con **solo los DLC activados** (y lo copia al portapapeles). `[Importar]` activa los DLC de ese archivo en otro equipo, identificándolos por ID o por nombre.
-- **Panel propio en vez de `alert()`:** Steam (CEF) no implementa `window.alert()`, por lo que el plugin usa un panel modal y notificaciones visibles dentro de la propia ventana.
+- **Avisos visibles:** Steam (CEF) no implementa `window.alert()`, así que el plugin muestra los avisos como notificaciones dentro de la propia ventana.
 - **Integración nativa:** Se integran directamente en la cabecera de la sección de DLC de Steam junto a *Buscar* y *Ver más en la tienda*.
 - **Multi-idioma:** Compatible con Steam en español, inglés y otros idiomas.
 - **Seguro y Privado:** 

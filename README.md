@@ -3,56 +3,21 @@
 
 
 
-
 # Steam DLC Switcher (Steam Millennium Plugin)
 
 **Steam DLC Switcher** es un complemento para Steam (usando [Millennium](https://docs.steambrew.app/users/getting-started/installation) que añade botones interactivos para **activar o desactivar todos los DLCs** de cualquier juego con un solo clic en la ventana de Propiedades.
 
 ---
 
-# 👋 Te han pasado una configuración de DLC
+## ➕ Añadir
 
-Si alguien te ha enviado un archivo llamado **`steam-dlc-switcher.txt`**, esto es para ti.
-Ese archivo guarda **qué DLCs tiene activados esa persona** en un juego concreto, para que tú
-puedas replicarlo en tu Steam **sin marcar DLCs uno a uno**.
+### Exportación de DLC
 
-## 1. Instala el complemento (solo la primera vez)
+El botón **`Exportar`** genera un archivo `steam-dlc-switcher.txt` con **los DLC que tengas
+activados en ese momento**. De paso lo copia al portapapeles, así que también puedes pegarlo
+en un chat o en un correo.
 
-1. **Cierra Steam por completo** (bandeja del sistema → clic derecho → *Salir de Steam*).
-2. Instala **[Millennium para Steam](https://docs.steambrew.app/users/getting-started/installation)** si aún no lo tienes.
-3. Ejecuta **`install.bat`** y elige `[1] Instalar`.
-4. Abre Steam de nuevo.
-
-## 2. Aplica la configuración
-
-1. Abre el juego **al que pertenece esa lista** en tu biblioteca.
-   ⚠️ La lista es de **un solo juego**: si te la pasaron para *Train Simulator*, úsala solo ahí.
-2. Clic derecho en el juego → **Propiedades** → pestaña **DLC**.
-3. Verás cuatro botones verdes/rojos encima de la lista. Pulsa **`Importar`**.
-4. Selecciona el archivo **`steam-dlc-switcher.txt`** que te pasaron.
-5. Listo. Abajo aparecerá un aviso verde con cuántos DLC se han activado.
-
-## 3. Qué hace y qué **no** hace
-
-| | |
-|---|---|
-| ✅ Activa | **Solo los DLC que tú ya tienes.** Los que no poseas se muestran como *no disponibles* y se saltan. |
-| ✅ Ignora | DLC que ya tenías activados (no los toca ni los duplica). |
-| ❌ No compra | **No se descarga ni se compra nada.** Sin credenciales, sin pagos, sin redes. |
-| ❌ No abre | No se abre ninguna web ni se envía nada a ningún servidor. Todo es local. |
-
-Al terminar verás un resumen con el detalle, por ejemplo:
-
-```
-Importados 9 DLC activados (5 ya estaban activos). 3 no disponibles: ...
-```
-
-Los *no disponibles* son DLC de la lista que tu cuenta no posee. Es lo esperado: indica que quien
-te pasó el archivo tiene DLC que tú no has comprado.
-
-## 4. Curiosidades del archivo
-
-Puedes abrirlo con el Bloc de notas. Es un texto plano y tiene este aspecto:
+El archivo es un texto plano, puedes abrirlo con el Bloc de notas:
 
 ```text
 Steam DLC Switcher export v1
@@ -61,14 +26,37 @@ Steam DLC Switcher export v1
 1050492	Train Simulator: London Overground BR Class 313 EMU Add-On
 ```
 
-La primera línea es la cabecera, y cada línea siguiente lleva el **ID** del DLC y su **nombre**
-separados por un tabulador. Los números son los identificadores de Steam: si abres
-`https://store.steampowered.com/app/1050490/` en el navegador, llegarás a esa página de la tienda.
+La primera línea es la cabecera. Cada línea siguiente lleva el **ID** del DLC y su **nombre**
+separados por un tabulador. El ID es el identificador de Steam: si visitas
+`https://store.steampowered.com/app/1050490/` llegas a la página de ese DLC en la tienda.
 
-## 5. Tus propias listas
+Pásale ese archivo a quien quieras: es la forma de compartir o respaldar tu configuración.
 
-El botón **`Exportar`** hace lo inverso: genera ese archivo con **los DLC que tengas activados
-ahora mismo**. Úsalo para respaldar tu configuración o para pasársela a otro amigo.
+### Importación de DLC
+
+El botón **`Importar`** aplica una lista de este tipo en tu Steam:
+
+1. Abre **el juego al que pertenece la lista** en tu biblioteca.
+   ⚠️ Cada lista es de **un solo juego**. Si es de *Train Simulator*, úsala solo en ese juego.
+2. Clic derecho en el juego → **Propiedades** → pestaña **DLC**.
+3. Pulsa **`Importar`**.
+4. Selecciona el archivo `steam-dlc-switcher.txt`.
+
+| | |
+|---|---|
+| ✅ Activa | **Solo los DLC que tú ya tienes.** Los que no poseas se saltan. |
+| ✅ Ignora | Los que ya tenías activados: no los toca ni los duplica. |
+| ❌ No compra | No se descarga ni se compra nada. Sin pagos, sin credenciales, sin red. |
+| ❌ No envía | Todo es local. No se sube nada a ningún servidor. |
+
+Al terminar verás un resumen abajo, por ejemplo:
+
+```
+Importados 9 DLC activados (5 ya estaban activos). 3 no disponibles: ...
+```
+
+Los *no disponibles* son DLC de la lista que tu cuenta no posee. Es lo esperado: indica que quien
+te pasó el archivo tiene DLC que tú no has comprado.
 
 ---
 
@@ -80,7 +68,7 @@ ahora mismo**. Úsalo para respaldar tu configuración o para pasársela a otro 
 - **Multi-idioma:** Compatible con Steam en español, inglés y otros idiomas.
 - **Seguro y Privado:** 
   - 100% libre de telemetría y rastreo.
-  - No envía datos ni realiza peticiones en segundo plano. Al importar, solo abre páginas de la tienda de Steam para los DLC que no aparecen o no están disponibles para activarse.
+  - No envía datos ni realiza peticiones en segundo plano. Al importar solo se leen los DLC de la lista local, nunca se abre ninguna web.
   - No lee ni expone datos de usuario, contraseñas ni credenciales.
   - Opera exclusivamente en el DOM de la interfaz de Steam.
 

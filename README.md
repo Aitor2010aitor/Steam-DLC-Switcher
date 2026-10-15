@@ -36,20 +36,23 @@ Pásale ese archivo a quien quieras: es la forma de compartir o respaldar tu con
 
 El botón **`Importar`** aplica una lista de este tipo en tu Steam:
 
-1. Abre **el juego al que pertenece la lista** en tu biblioteca.
-   ⚠️ Cada lista es de **un solo juego**. Si es de *Train Simulator*, úsala solo en ese juego.
-2. Clic derecho en el juego → **Propiedades** → pestaña **DLC**.
-3. Pulsa **`Importar`**.
-4. Selecciona el archivo `steam-dlc-switcher.txt`.
 
-| | |
-|---|---|
-| ✅ Activa | **Solo los DLC que tú ya tienes.** Los que no poseas se saltan. |
-| ✅ Ignora | Los que ya tenías activados: no los toca ni los duplica. |
-| ❌ No compra | No se descarga ni se compra nada. Sin pagos, sin credenciales, sin red. |
-| ❌ No envía | Todo es local. No se sube nada a ningún servidor. |
-
-Al terminar verás un resumen abajo, por ejemplo:
+> [!IMPORTANT]  
+> 1. Abre **el juego al que pertenece la lista** en tu biblioteca.
+>    ⚠️ Cada lista es de **un solo juego**. Si es de *Train Simulator*, úsala solo en ese juego.
+> 2. Clic derecho en el juego → **Propiedades** → pestaña **DLC**.
+> 3. Pulsa **`Importar`**.
+> 4. Selecciona el archivo `steam-dlc-switcher.txt`.
+> 
+> | | |
+> |---|---|
+> | ✅ Activa | **Solo los DLC que tú ya tienes.** Los que no poseas se saltan. |
+> | ✅ Ignora | Los que ya tenías activados: no los toca ni los duplica. |
+> | ❌ No compra | No se descarga ni se compra nada. Sin pagos, sin credenciales, sin red. |
+> | ❌ No envía | Todo es local. No se sube nada a ningún servidor. |
+> 
+> Al terminar verás un resumen abajo, por ejemplo:
+> 
 
 ```
 Importados 9 DLC activados (5 ya estaban activos). 3 no disponibles: ...

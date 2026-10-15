@@ -3,7 +3,7 @@
 
 
 
-> [!WARNING]  
+> [!IMPORTANT]  
 > **En el archivo de instalación puede aparecer algún texto en rojo, pero tranquilo, se ha instalado correctamente igualmente.**
 **Tengo que arreglar ese detalle en la siguiente actualización, que estará disponible dentro de muy poco.**
 

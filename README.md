@@ -67,7 +67,7 @@ te pasó el archivo tiene DLC que tú no has comprado.
 - **Un clic para todo:** Botones dedicados `[✓ Activar Todos]`, `[✕ Desactivar Todos]`, `[Exportar]` e `[Importar]`, sin menús ni ventanas intermedias.
 - **Compartir listas:** `[Exportar]` descarga un TXT con **solo los DLC activados** (y lo copia al portapapeles). `[Importar]` activa los DLC de ese archivo en otro equipo, identificándolos por ID o por nombre.
 - **Avisos visibles:** Steam (CEF) no implementa `window.alert()`, así que el plugin muestra los avisos como notificaciones dentro de la propia ventana.
-- **Integración nativa:** Se integran directamente en la cabecera de la sección de DLC de Steam junto a *Buscar* y *Ver más en la tienda*.
+- **Integración nativa y sin ocupar sitio:** Se meten en la **misma línea** que *Buscar* y *Ver más en la tienda*, así que **no añaden ni una fila de alto**: ves los mismos DLC que sin el plugin.
 - **Multi-idioma:** Compatible con Steam en español, inglés y otros idiomas.
 - **Seguro y Privado:** 
   - 100% libre de telemetría y rastreo.

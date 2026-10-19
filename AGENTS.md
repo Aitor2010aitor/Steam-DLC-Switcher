@@ -47,7 +47,7 @@ El archivo `plugin.json` define los metadatos. Debe contener:
   "common_name": "Steam DLC Switcher",
   "description": "Activa o desactiva todos los DLCs y permite exportar e importar listas.",
   "author": "Aitor",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "useBackend": false,
   "frontend": "index.js"
 }
@@ -124,6 +124,9 @@ como un segundo plugin. El `plugins\steam_dlc_switcher` real se quedaba en su ve
   `echo     (no habia)` abre un bloque nuevo y rompe el `if/else` entero. Usa `^(` o reescribe.
 - Las rutinas (`call :label`) deben ir **después** de un `goto :menu`, o al caer se ejecutan
   solas y el script termina antes de tiempo.
+- Al probarlo automatizado con la entrada redirigida (`"1" | cmd /c install.bat`), al llegar al
+  EOF `set /p` devuelve vacío y el **menú se repite en bucle infinito**. No es un fallo del
+  script (en una consola real no hay EOF): filtra la salida o mata el proceso al terminar.
 
 ### El instalador cierra y reabre Steam
 Los plugins no se recargan en caliente y los ficheros están bloqueados mientras corre Steam, así
@@ -196,7 +199,16 @@ Puntos clave:
   `#`. Por eso `a[href*="/app/"]` **no matchea nada** y `extractAppId()` devuelve `''`.
   Consecuencia observed en un caso real: un `.txt` exportado con **719 líneas y la columna del ID
   vacía**, lo que obligaba a la importación a adivinar por nombre y activaba DLCs de más.
-- **Punto de inyección:** `table.parentElement.insertBefore(buttons, table)`.
+- **Punto de inyección:** dentro de `div[class={DlcTopRow}]`, que es `flex row`. La fila se
+  localiza **por estructura**, no por clase: es el hermano anterior de `div[role="table"]` que
+  contiene un `<input>` (el buscador). Si no se encuentra, plan B: `table.parentElement.insertBefore(buttons, table)`.
+  - ⚠️ `[class*="DlcTopRow"]` **no matchea** (la clase va hasheada: `ZII4C3WPvs65P3yvAtV69`), y ese
+    fue el bug de "me toca bajar la barra para ver más DLC": al no hallar la fila, los botones se
+    inyectaban **en una línea propia** antes de la cuadrícula y robaban una fila entera de DLC.
+  - Los botones son compactos a propósito (11px, padding 3px 8px, `flex-wrap:nowrap`,
+    `flex:0 0 auto`, sin márgenes verticales): tienen que caber **en la misma línea** que el
+    buscador. Así el plugin no añade ni un píxel de alto y se ven los mismos DLC que sin él.
+    Alta de la fila = 0. Si añades estilos, comprueba que la fila no crece ni salta de línea.
 
 ### ⚠️ Fuente de verdad: las props de React (v0.2.0)
 El DOM de Steam **miente**. Ni el `href` ni `aria-checked` son fiables, así que
@@ -309,7 +321,8 @@ Como cinturón y tirantes, `tryInject()` comprueba el contenedor por `getElement
 Hay un arnés que ejecuta el plugin real contra un DOM mínimo simulado y verifica que:
 - el contenedor se inyecta **exactamente una vez** aunque se simulen 200 mutaciones del DOM,
 - los atributos (`id`, `type="file"`) se aplican de verdad,
-- se detectan las filas de DLC y el contenedor se inserta antes de la tabla.
+- se detectan las filas de DLC y el contenedor se inserta **dentro de la fila del buscador**
+  (el hermano que va justo antes de la cuadrícula), no en una línea propia.
 
 Ejecuta `node test-plugin.js` **después de tocar `frontend/index.js`**. Reproduce la estructura
 real de Steam (`role="table"` > `role="row"` > `role="cell"` > `role="checkbox"` con `aria-checked`)

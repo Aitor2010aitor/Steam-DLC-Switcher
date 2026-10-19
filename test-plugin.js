@@ -68,8 +68,12 @@ function makeDom() {
             hasAttribute(k) { return this.attrs[k] !== undefined; },
             addEventListener(t, fn) { (this._listeners[t] = this._listeners[t] || []).push(fn); },
             dispatch(t, ev) { (this._listeners[t] || []).forEach(fn => fn(ev || { preventDefault() {}, stopPropagation() {} })); },
-            appendChild(c) { this.childNodes.push(c); c.parentNode = this; return c; },
+            appendChild(c) {
+                if (c.getAttribute && c.getAttribute('id') === 'dlc-toggle-custom-container') doc.__injections++;
+                this.childNodes.push(c); c.parentNode = this; return c;
+            },
             insertBefore(c, ref) {
+                if (c.getAttribute && c.getAttribute('id') === 'dlc-toggle-custom-container') doc.__injections++;
                 const i = this.childNodes.indexOf(ref);
                 if (i === -1) return this.appendChild(c);
                 this.childNodes.splice(i, 0, c); c.parentNode = this; return c;
@@ -107,6 +111,14 @@ function makeDom() {
         Object.defineProperty(node, 'parentElement', {
             get() { return this.parentNode || null; },
         });
+        Object.defineProperty(node, 'previousElementSibling', {
+            get() {
+                if (!this.parentNode) return null;
+                const kids = this.parentNode.childNodes;
+                const i = kids.indexOf(this);
+                return i > 0 ? kids[i - 1] : null;
+            },
+        });
         return node;
     }
 
@@ -121,14 +133,7 @@ function makeDom() {
     doc.addEventListener = () => {};
 
     // Cuenta cuantas veces se inserta el contenedor de botones.
-    const origInsert = body.insertBefore.bind(body);
-    body.insertBefore = (c, ref) => {
-        if (c.getAttribute && c.getAttribute('id') === 'dlc-toggle-custom-container') {
-            doc.__injections++;
-            if (!c.getAttribute('id')) doc.__singletonGuardHits++;
-        }
-        return origInsert(c, ref);
-    };
+    // (El conteo se hace en appendChild/insertBefore de cualquier nodo.)
 
     const rafQueue = [];
     const win = {
@@ -198,6 +203,21 @@ function buildDlcDom(doc, opts) {
         }
     }
 
+    // Fila superior REAL de Steam: el buscador + "Ver mas en la tienda". Su clase va
+    // hasheada (ZII4C3WPvs65P3yvAtV69), asi que el plugin debe hallarla por ESTRUCTURA:
+    // es el hermano que va justo antes de la cuadricula y lleva un <input>.
+    const topRow = doc.createElement('div');
+    topRow.className = 'ZII4C3WPvs65P3yvAtV69';
+    topRow.setAttribute('flow-children', 'row');
+    const storeBtn = doc.createElement('button');
+    storeBtn.textContent = 'Ver mas en la tienda';
+    topRow.appendChild(storeBtn);
+    const search = doc.createElement('input');
+    search.setAttribute('type', 'text');
+    search.setAttribute('placeholder', 'Buscar');
+    topRow.appendChild(search);
+
+    doc.body.appendChild(topRow);
     doc.body.appendChild(grid);
     return grid;
 }
@@ -251,7 +271,11 @@ const rows = grid.querySelectorAll('[role="row"]').filter(r => !r.querySelector(
 check('3 filas de DLC detectadas', rows.length === 3, 'hay ' + rows.length);
 
 const container = doc.querySelector('#dlc-toggle-custom-container');
-check('insertado antes de la tabla', container && container.parentNode === grid.parentNode);
+check('insertado DENTRO de la fila del buscador (no en linea propia)',
+    container && container.parentNode === grid.previousElementSibling,
+    'padre: ' + (container && container.parentNode && container.parentNode.className));
+check('los botones van detras del buscador, sin empujar la cuadricula',
+    container && container.parentNode.childNodes[container.parentNode.childNodes.length - 1] === container);
 
 console.log('\n' + (fail === 0 ? 'TODO OK' : fail + ' FALLOS') + '  (' + pass + ' correctas)');
 

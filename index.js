@@ -442,11 +442,14 @@ function clickInChunks(doc, targets, onDone) {
 
     // ------------------------------------------------------------------- Botones
     function makeButton(doc, text, background, title, handler) {
+        // Compactos a proposito: tienen que caber en la misma linea que el buscador para
+        // no anadir alto y que se vean los mismos DLC que sin el plugin.
         var btn = el(doc, 'button', {
             text: text,
             title: title,
-            style: 'background:' + background + ';color:#fff;border:none;padding:6px 12px;border-radius:3px;' +
-                'font-weight:bold;font-size:12px;cursor:pointer;transition:background .2s;box-shadow:0 1px 3px rgba(0,0,0,0.4);'
+            style: 'background:' + background + ';color:#fff;border:none;padding:3px 8px;border-radius:3px;' +
+                'font-weight:bold;font-size:11px;line-height:1.2;white-space:nowrap;cursor:pointer;' +
+                'box-shadow:0 1px 2px rgba(0,0,0,0.35);transition:filter .15s;'
         });
         btn.addEventListener('mouseenter', function () { btn.style.filter = 'brightness(1.15)'; });
         btn.addEventListener('mouseleave', function () { btn.style.filter = 'none'; });
@@ -460,7 +463,10 @@ function clickInChunks(doc, targets, onDone) {
 
     function createButtonContainer(doc) {
         var container = el(doc, 'div', { attrs: { id: CONTAINER_ID } });
-        container.style.cssText = 'display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 10px;z-index:9999;';
+        // Una sola linea, sin margenes verticales y sin encogerse: asi comparte la altura de
+        // la fila del buscador y no empuja la lista de DLC hacia abajo.
+        container.style.cssText = 'display:inline-flex;gap:6px;align-items:center;flex-wrap:nowrap;' +
+            'flex:0 0 auto;margin:0;padding:0;align-self:center;';
 
         container.appendChild(makeButton(doc, '✓ Activar Todos', '#5cbe32',
             'Activa todos los DLC de la lista', function () { toggleDLCs(doc, true); }));
@@ -511,11 +517,26 @@ function clickInChunks(doc, targets, onDone) {
             (lower.indexOf('nombre') !== -1 || lower.indexOf('name') !== -1);
     }
 
-    function findInsertionTarget(doc, state) {
-        var topRow = doc.querySelector(LEGACY_TOP_ROW);
-        if (topRow) return { element: topRow, position: 'inside' };
+    // La fila superior (la del buscador) NO se puede buscar por clase: Valve la hashea
+    // (DlcTopRow -> ZII4C3WPvs65P3yvAtV69). Se localiza por estructura: es el hermano
+    // que va justo antes de la cuadricula y lleva el <input> del buscador.
+    function findTopRow(doc, table) {
+        if (table) {
+            var prev = table.previousElementSibling;
+            if (prev && prev.querySelector && prev.querySelector('input')) return prev;
+        }
+        return doc.querySelector(LEGACY_TOP_ROW);
+    }
 
+    function findInsertionTarget(doc, state) {
         var table = findDlcTable(doc, state);
+
+        // Dentro de la fila del buscador: comparte linea, asi que el plugin no anade
+        // ninguna fila de alto y se ven los mismos DLC que sin instalarlo.
+        var topRow = findTopRow(doc, table);
+        if (topRow) return { element: topRow, position: 'append' };
+
+        // Plan B: linea propia antes de la cuadricula (peor, pero funciona).
         if (table && table.parentElement) return { element: table, position: 'before' };
 
         return null;
@@ -533,10 +554,15 @@ function clickInChunks(doc, targets, onDone) {
 
         console.log('[Steam DLC Switcher] Insertando botones...');
         var buttons = createButtonContainer(doc);
-        if (target.position === 'inside') {
+        if (target.position === 'append') {
+            target.element.appendChild(buttons);
+        } else if (target.position === 'inside') {
             target.element.insertBefore(buttons, target.element.firstChild);
         } else if (target.element.parentElement) {
             target.element.parentElement.insertBefore(buttons, target.element);
+            // Va en linea propia: necesita un poco de aire para no pegarse a la cuadricula.
+            buttons.style.margin = '4px 10px';
+            buttons.style.flexWrap = 'wrap';
         }
         state.table = null; // React puede desmontar la tabla: obligamos a re-escanear.
     }

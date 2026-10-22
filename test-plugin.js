@@ -141,6 +141,8 @@ function makeDom() {
         MutationObserver: class { observe() {} disconnect() {} },
         requestAnimationFrame: (cb) => { rafQueue.push(cb); return rafQueue.length; },
         setTimeout: (cb) => { rafQueue.push(cb); return rafQueue.length; },
+        clearTimeout: () => {},
+        clearInterval: () => {},
         setInterval: () => 0,
         addEventListener: () => {},
         localStorage: { getItem: () => null, setItem: () => {} },
@@ -296,6 +298,52 @@ function buildToggleDom(doc, count) {
     return { grid, state, clicked };
 }
 
+// Pestana DLC con la lista COMPLETA en las props de React (details.vecDLC) pero solo
+// unas pocas filas dibujadas en el DOM, que es lo que pasa con 700+ DLC.
+function buildApiDom(doc, count) {
+    const vecDLC = [];
+    for (let i = 0; i < count; i++) {
+        vecDLC.push({ unAppID: 2000 + i, strName: 'DLC ' + i, bEnabled: true });
+    }
+
+    const grid = doc.createElement('div');
+    grid.setAttribute('role', 'table');
+
+    const headerRow = doc.createElement('div');
+    headerRow.setAttribute('role', 'row');
+    const colHeader = doc.createElement('div');
+    colHeader.setAttribute('role', 'columnheader');
+    headerRow.appendChild(colHeader);
+    grid.appendChild(headerRow);
+
+    // Solo 3 filas montadas: el resto de DLC no esta en el DOM.
+    for (let i = 0; i < 3; i++) {
+        const row = doc.createElement('div');
+        row.setAttribute('role', 'row');
+        const cell = doc.createElement('div');
+        cell.setAttribute('role', 'cell');
+        const cb = doc.createElement('div');
+        cb.setAttribute('role', 'checkbox');
+        cb.setAttribute('aria-checked', 'true');
+        cell.appendChild(cb);
+        row.appendChild(cell);
+        grid.appendChild(row);
+    }
+
+    const topRow = doc.createElement('div');
+    const search = doc.createElement('input');
+    search.setAttribute('type', 'text');
+    topRow.appendChild(search);
+    doc.body.appendChild(topRow);
+    doc.body.appendChild(grid);
+
+    // Cadena de fibers como React: div[role=table] -> componente hi({details})
+    const detailsFiber = { memoizedProps: { details: { unAppID: 427100, vecDLC } }, return: null };
+    grid.__reactFiber$zzz = { memoizedProps: {}, return: detailsFiber };
+
+    return { grid, vecDLC };
+}
+
 // ---------------------------------------------------------------- ejecutar
 const src = fs.readFileSync(path.join(__dirname, 'frontend', 'index.js'), 'utf8');
 const { doc, win, rafQueue } = makeDom();
@@ -432,6 +480,49 @@ console.log('\n=== ESCENARIO TOGGLE: 60 DLC y React repinta la lista en cada cli
     check('se pulso cada casilla una vez', clickedCount === 60, 'pulsadas: ' + clickedCount);
     check('ninguna casilla se pulso dos veces', Object.keys(data.clicked).every(k => data.clicked[k] === 1),
         JSON.stringify(data.clicked));
+}
+
+// ============================================================================
+// Lista completa via API de Steam: 60 DLC en las props pero solo 3 dibujados.
+// Pulsando casillas solo cambiaban los dibujados; SetDLCEnabled los cambia todos.
+// ============================================================================
+console.log('\n=== ESCENARIO API: 60 DLC en props, solo 3 dibujados ===');
+{
+    const { doc: d4, win: w4, rafQueue: q4 } = makeDom();
+    const data4 = buildApiDom(d4, 60);
+
+    const calls = [];
+    w4.SteamClient = {
+        Apps: {
+            SetDLCEnabled(appid, dlcId, enabled) {
+                calls.push({ appid, dlcId, enabled });
+                const dlc = data4.vecDLC.find(x => x.unAppID === dlcId);
+                if (dlc) dlc.bEnabled = enabled;
+            },
+        },
+    };
+
+    const sb4 = { window: w4, console, Object, Array, Math, JSON, Date, String, RegExp, Uint8Array, TextDecoder };
+    sb4.globalThis = sb4;
+    vm.createContext(sb4);
+    vm.runInContext(src, sb4, { filename: 'plugin.js' });
+    while (q4.length) { const cb = q4.shift(); cb(); }
+
+    const c4 = d4.querySelector('#dlc-toggle-custom-container');
+    const btns4 = descendants(c4).filter(n => n.tagName === 'BUTTON');
+    const on4 = btns4[0];
+    const off4 = btns4[1];
+
+    off4.dispatch('click', { target: off4, preventDefault() {}, stopPropagation() {} });
+    check('Desactivar llama a SetDLCEnabled para los 60', calls.length === 60, 'llamadas: ' + calls.length);
+    check('con el appid correcto', calls.every(c => c.appid === 427100), JSON.stringify(calls[0]));
+    check('todos a false, incluidos los no dibujados', calls.every(c => c.enabled === false));
+    check('ninguno se quedo activado', data4.vecDLC.every(d => d.bEnabled === false));
+
+    calls.length = 0;
+    on4.dispatch('click', { target: on4, preventDefault() {}, stopPropagation() {} });
+    check('Activar vuelve a llamar 60 veces', calls.length === 60, 'llamadas: ' + calls.length);
+    check('todos a true', calls.every(c => c.enabled === true));
 }
 
 console.log('\n' + (fail === 0 ? 'RESULTADO FINAL: TODO OK' : 'RESULTADO FINAL: ' + fail + ' FALLOS'));

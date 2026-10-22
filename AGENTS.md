@@ -290,14 +290,29 @@ se cuelga**. Cuatro salvaguardas obligatorias en `watch()`:
 4. **Latido barato.** El `setInterval` de 1000 ms solo llama a `run()` si
    `doc.getElementById(CONTAINER_ID)` no existe (o sea, si React desmontó nuestros botones).
 
-Aparte, `toggleDLCs()` pulsa las casillas **todas en la misma pasada**, como la primera versión
-publicada (commit `7fb44ae`). Antes se pulsaban en tandas de 8 cada 30 ms, y con listas grandes
-(700+ DLC) **solo cambiaban las 8 primeras**: React repinta la lista al cambiar cada DLC y las
-casillas que faltaban por pulsar quedan fuera del DOM, así que los clics se pierden.
-La casilla se **vuelve a leer de su fila** (`row.querySelector`) justo antes de pulsarla, por si
-React la ha sustituido al repintar la fila anterior.
-El test `test-plugin.js` reproduce esto: 60 DLC con React sustituyendo todas las casillas en cada
-clic. Con las tandas solo cambiaba 1; con la pasada única, los 60.
+### ⚠️ Activar/desactivar: usar `details.vecDLC` + `SetDLCEnabled`, no las casillas del DOM
+El componente de la pestaña DLC (`function hi(Sr)` en `sp.js`) recibe **la lista completa** de DLC:
+
+```javascript
+const { details: Vr } = Sr;        // Vr.unAppID  +  Vr.vecDLC  = TODOS los DLC
+// cada casilla hace:  onChange: nn => SteamClient.Apps.SetDLCEnabled(Vr.unAppID, si.unAppID, nn)
+```
+
+`toggleDLCs()` hace, en este orden:
+1. `getDlcDetailsFromReact(table)` sube por `__reactFiber$` desde `div[role="table"]` hasta el
+   componente que tiene `props.details.vecDLC`, y llama a
+   `SteamClient.Apps.SetDLCEnabled(details.unAppID, dlc.unAppID, activar)` por cada DLC cuyo
+   `bEnabled` no coincida. **Es lo mismo que hace Steam al pulsar la casilla**, pero cubre los
+   DLC que aún no están dibujados.
+2. Plan B (si Valve cambia esas props): pulsar las casillas del DOM **todas en la misma pasada**,
+   como la primera versión publicada (`7fb44ae`), releyendo cada casilla de su fila con
+   `row.querySelector` por si React la ha sustituido.
+
+**Nunca volver a las tandas.** La v0.2.1 pulsaba 8 casillas cada 30 ms; con 700+ DLC solo
+cambiaban las primeras y el usuario tenía que bajar hasta el final de la lista y repetir. Ese fue
+el bug del README. El test `test-plugin.js` lo reproduce con 60 DLC: escenario "API" (solo 3 filas
+dibujadas, los 60 deben cambiarse) y escenario "TOGGLE" (React sustituye las casillas en cada
+clic).
 
 ### ⚠️ `el()` DEBE aplicar `opts.attrs`
 `el(doc, tag, opts)` centraliza la creación de nodos. Si se le olvida el bloque de `attrs`,

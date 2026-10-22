@@ -155,6 +155,30 @@
         return null;
     }
 
+    // La pestana DLC (componente `hi` de sp.js) recibe la lista COMPLETA en
+    // props.details.vecDLC y el appid en props.details.unAppID. Es la unica fuente
+    // completa: el DOM solo tiene las filas que React ha montado, asi que pulsando
+    // casillas los DLC que aun no se habian dibujado se quedaban sin cambiar.
+    function getDlcDetailsFromReact(node) {
+        var fiber = node ? getReactFiber(node) : null;
+        var guard = 0;
+        while (fiber && guard++ < 120) {
+            var props = fiber.memoizedProps;
+            if (props && props.details && props.details.vecDLC) return props.details;
+            fiber = fiber.return || null;
+        }
+        return null;
+    }
+
+    // El cambio real de Steam es SteamClient.Apps.SetDLCEnabled(appid, dlcId, activado),
+    // exactamente lo que llama la casilla de la pestana DLC.
+    function getSteamApps(doc) {
+        var view = viewOf(doc);
+        var client = (view && view.SteamClient) || null;
+        if (!client && typeof SteamClient !== 'undefined') client = SteamClient;
+        return (client && client.Apps) || null;
+    }
+
     function getDlcEntries(doc, state) {
         var rows = getDlcRows(findDlcTable(doc, state));
         var entries = [];
@@ -413,22 +437,46 @@
     }
 
     // -------------------------------------------------------------------- Toggle
-    // Logica de la PRIMERA version publicada en GitHub (commit 7fb44ae): recoger las
-    // casillas de la cuadricula y pulsarlas TODAS EN LA MISMA PASADA.
-    // Antes se pulsaban en tandas de 8 cada 30 ms. Entre tanda y tanda React vuelve a
-    // pintar la fila del DLC que acaba de cambiar y las casillas que faltaban por pulsar
-    // se quedan fuera del DOM: con listas grandes (700+ DLC) solo cambiaban las 8 primeras.
+    // Logica de la PRIMERA version publicada en GitHub (commit 7fb44ae): nada de tandas
+    // con setTimeout, se cambian todos de una vez.
+    // Camino principal: la lista completa de las props de React (details.vecDLC) y la API
+    // de Steam (SetDLCEnabled). Asi da igual que la fila este dibujada o no: antes solo
+    // cambiaban las casillas que habia en el DOM y habia que bajar la lista entera.
+    // Plan B: pulsar las casillas del DOM, todas en la misma pasada, por si Valve cambia
+    // las props internas del componente.
     function toggleDLCs(doc, enable) {
+        var details = getDlcDetailsFromReact(findDlcTable(doc));
+        var apps = getSteamApps(doc);
+
+        if (details && details.unAppID && details.vecDLC && apps &&
+            typeof apps.SetDLCEnabled === 'function') {
+            var changed = 0;
+            details.vecDLC.forEach(function (dlc) {
+                if (!dlc || dlc.unAppID === undefined || dlc.unAppID === null) return;
+                if (!!dlc.bEnabled === enable) return;
+                apps.SetDLCEnabled(details.unAppID, dlc.unAppID, enable);
+                changed++;
+            });
+
+            if (!changed) {
+                notify(doc, 'No hay ningun DLC que ' + (enable ? 'activar' : 'desactivar') + '.');
+                return;
+            }
+            notify(doc, changed + ' DLC(s) ' + (enable ? 'activados' : 'desactivados') + '.');
+            return;
+        }
+
+        // Plan B: solo lo que hay dibujado en ese momento.
         var table = findDlcTable(doc);
         var rows = getDlcRows(table);
-        var changed = 0;
+        var clicked = 0;
 
         function apply(checkbox) {
             if (!checkbox) return;
             // Mismo criterio que la v1: el estado sale de la propia casilla (aria-checked).
             if (isCheckboxEnabled(checkbox) === enable) return;
             checkbox.click();
-            changed++;
+            clicked++;
         }
 
         if (rows.length) {
@@ -441,7 +489,7 @@
             Array.prototype.slice.call(table.querySelectorAll(CHECKBOX_SEL)).forEach(apply);
         }
 
-        if (!changed) {
+        if (!clicked) {
             notify(
                 doc,
                 table
@@ -451,7 +499,7 @@
             );
             return;
         }
-        notify(doc, changed + ' DLC(s) ' + (enable ? 'activados' : 'desactivados') + '.');
+        notify(doc, clicked + ' DLC(s) ' + (enable ? 'activados' : 'desactivados') + '.');
     }
 
     // ------------------------------------------------------------------- Botones

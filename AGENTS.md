@@ -314,6 +314,10 @@ el bug del README. El test `test-plugin.js` lo reproduce con 60 DLC: escenario "
 dibujadas, los 60 deben cambiarse) y escenario "TOGGLE" (React sustituye las casillas en cada
 clic).
 
+`getAllDlc(doc)` usa esa misma lista completa para **Exportar** e **Importar**: el TXT incluye los
+DLC activados que aún no se han dibujado y la importación puede activar cualquiera de ellos con
+`SetDLCEnabled` (antes solo encontraba las filas del DOM y el resto se quedaba sin activar).
+
 ### ⚠️ `el()` DEBE aplicar `opts.attrs`
 `el(doc, tag, opts)` centraliza la creación de nodos. Si se le olvida el bloque de `attrs`,
 **ningún atributo se aplica nunca** y el plugin se rompe de forma silenciosa:

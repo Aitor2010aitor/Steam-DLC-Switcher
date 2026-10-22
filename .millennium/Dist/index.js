@@ -179,6 +179,28 @@
         return (client && client.Apps) || null;
     }
 
+    // Lista de DLC para exportar e importar, con el mismo criterio que el toggle: primero
+    // la lista COMPLETA de React (incluye los DLC que aun no se han dibujado) y, si no
+    // esta disponible, las filas del DOM.
+    function getAllDlc(doc) {
+        var details = getDlcDetailsFromReact(findDlcTable(doc));
+        if (details && details.unAppID && details.vecDLC && details.vecDLC.length) {
+            var list = [];
+            details.vecDLC.forEach(function (dlc) {
+                if (!dlc || dlc.unAppID === undefined || dlc.unAppID === null) return;
+                list.push({
+                    appId: String(dlc.unAppID),
+                    name: cleanText(dlc.strName || ''),
+                    enabled: !!dlc.bEnabled,
+                    available: true,
+                    dlcId: dlc.unAppID
+                });
+            });
+            return { list: list, details: details };
+        }
+        return { list: getDlcEntries(doc), details: null };
+    }
+
     function getDlcEntries(doc, state) {
         var rows = getDlcRows(findDlcTable(doc, state));
         var entries = [];
@@ -272,7 +294,9 @@
     // Un solo clic: genera el archivo de los DLC ACTIVADOS y lo deja descargado,
     // copiado en el portapapeles y guardado para la importación.
     function exportActiveDLCs(doc) {
-        var entries = getDlcEntries(doc);
+        // Antes se recorrian solo las filas dibujadas: con listas grandes faltaban DLC
+        // en el archivo. Ahora se usa la lista completa (vecDLC) y el DOM como plan B.
+        var entries = getAllDlc(doc).list;
         if (!entries.length) {
             notify(doc, 'No se ha encontrado ninguna lista de DLC en esta ventana.', 'error');
             return;
@@ -375,11 +399,16 @@
     }
 
     function importDLCs(doc, records) {
-        var entries = getDlcEntries(doc);
+        var all = getAllDlc(doc);
+        var entries = all.list;
         if (!entries.length) {
             notify(doc, 'No se ha encontrado ninguna lista de DLC en esta ventana.', 'error');
             return;
         }
+
+        var details = all.details;
+        var apps = getSteamApps(doc);
+        var useApi = !!(details && details.unAppID && apps && typeof apps.SetDLCEnabled === 'function');
 
         var byId = {};
         var byName = {};
@@ -391,7 +420,7 @@
         var activated = 0;
         var already = 0;
         var missing = [];
-        var toClick = [];
+        var toApply = [];
 
         records.forEach(function (record) {
             var entry = resolveEntry(byId, byName, record);
@@ -403,12 +432,19 @@
                 already++;
                 return;
             }
-            toClick.push(function () {
-                // Se relee la casilla de su fila al pulsarla: si React la ha sustituido
-                // (re-render al cambiar el DLC anterior) la referencia guardada ya no vale.
-                var cb = entry.row.querySelector(CHECKBOX_SEL) || entry.checkbox;
-                if (cb && !isCheckboxEnabled(cb)) cb.click();
-            });
+            if (useApi) {
+                // Igual que la casilla de Steam: activa el DLC aunque no este dibujado.
+                toApply.push(function () {
+                    apps.SetDLCEnabled(details.unAppID, entry.dlcId, true);
+                });
+            } else {
+                toApply.push(function () {
+                    // Se relee la casilla de su fila al pulsarla: si React la ha sustituido
+                    // (re-render al cambiar el DLC anterior) la referencia guardada ya no vale.
+                    var cb = entry.row.querySelector(CHECKBOX_SEL) || entry.checkbox;
+                    if (cb && !isCheckboxEnabled(cb)) cb.click();
+                });
+            }
             activated++;
         });
 
@@ -425,14 +461,14 @@
             console.log('[Steam DLC Switcher] ' + message);
         };
 
-        if (!toClick.length) {
+        if (!toApply.length) {
             summary();
             return;
         }
         // Todo en la misma pasada, igual que los botones de activar/desactivar. Con tandas
         // (setTimeout) React repinta entre tanda y tanda y las casillas que faltaban por
         // pulsar se quedan fuera del DOM.
-        toClick.forEach(function (click) { click(); });
+        toApply.forEach(function (apply) { apply(); });
         summary();
     }
 

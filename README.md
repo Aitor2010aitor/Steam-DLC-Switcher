@@ -2,7 +2,7 @@
 
  
 > [!NOTE]  
-> ***Bug corregido en la v0.2.3: activar y desactivar cambia ya TODOS los DLC de una vez, sin tener que bajar hasta el final de la lista. Si probaste una versión anterior, reinstala esta.***
+> ***Corregido en la v0.2.4: activar y desactivar cambia TODOS los DLC de una vez (sin tener que bajar hasta el final), y exportar/importar también usan la lista completa. Si probaste una versión anterior, reinstala esta.***
 
 
 # Steam DLC Switcher (Steam Millennium Plugin)

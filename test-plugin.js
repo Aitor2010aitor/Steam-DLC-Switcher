@@ -523,6 +523,17 @@ console.log('\n=== ESCENARIO API: 60 DLC en props, solo 3 dibujados ===');
     on4.dispatch('click', { target: on4, preventDefault() {}, stopPropagation() {} });
     check('Activar vuelve a llamar 60 veces', calls.length === 60, 'llamadas: ' + calls.length);
     check('todos a true', calls.every(c => c.enabled === true));
+
+    // Exportar tiene que usar la lista completa, no solo las 3 filas dibujadas
+    let downloaded4 = null;
+    w4.Blob = class { constructor(parts) { downloaded4 = parts.join(''); } };
+    const exp4 = btns4.find(b => b.textContent === 'Exportar');
+    check('boton Exportar presente', !!exp4);
+    exp4.dispatch('click', { target: exp4, preventDefault() {}, stopPropagation() {} });
+    const lines4 = (downloaded4 || '').split('\r\n').filter(Boolean);
+    check('Exportar incluye los 60 DLC (no solo los 3 dibujados)', lines4.length === 61,
+        'lineas: ' + lines4.length);
+    check('el export lleva IDs de los no dibujados', lines4.slice(1).every(l => /^\d+\t/.test(l)));
 }
 
 console.log('\n' + (fail === 0 ? 'RESULTADO FINAL: TODO OK' : 'RESULTADO FINAL: ' + fail + ' FALLOS'));

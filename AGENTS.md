@@ -290,8 +290,14 @@ se cuelga**. Cuatro salvaguardas obligatorias en `watch()`:
 4. **Latido barato.** El `setInterval` de 1000 ms solo llama a `run()` si
    `doc.getElementById(CONTAINER_ID)` no existe (o sea, si React desmontó nuestros botones).
 
-Aparte, `clickInChunks()` pulsa las casillas en tandas de 8 con 30 ms de separación: pulsar 50
-casillas en el mismo tick dispara 50 llamadas `SetDLCEnabled` seguidas y Steam se atasca.
+Aparte, `toggleDLCs()` pulsa las casillas **todas en la misma pasada**, como la primera versión
+publicada (commit `7fb44ae`). Antes se pulsaban en tandas de 8 cada 30 ms, y con listas grandes
+(700+ DLC) **solo cambiaban las 8 primeras**: React repinta la lista al cambiar cada DLC y las
+casillas que faltaban por pulsar quedan fuera del DOM, así que los clics se pierden.
+La casilla se **vuelve a leer de su fila** (`row.querySelector`) justo antes de pulsarla, por si
+React la ha sustituido al repintar la fila anterior.
+El test `test-plugin.js` reproduce esto: 60 DLC con React sustituyendo todas las casillas en cada
+clic. Con las tandas solo cambiaba 1; con la pasada única, los 60.
 
 ### ⚠️ `el()` DEBE aplicar `opts.attrs`
 `el(doc, tag, opts)` centraliza la creación de nodos. Si se le olvida el bloque de `attrs`,

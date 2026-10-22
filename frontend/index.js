@@ -379,7 +379,12 @@
                 already++;
                 return;
             }
-            toClick.push(function () { entry.checkbox.click(); });
+            toClick.push(function () {
+                // Se relee la casilla de su fila al pulsarla: si React la ha sustituido
+                // (re-render al cambiar el DLC anterior) la referencia guardada ya no vale.
+                var cb = entry.row.querySelector(CHECKBOX_SEL) || entry.checkbox;
+                if (cb && !isCheckboxEnabled(cb)) cb.click();
+            });
             activated++;
         });
 
@@ -400,44 +405,53 @@
             summary();
             return;
         }
-        clickInChunks(doc, toClick, summary);
+        // Todo en la misma pasada, igual que los botones de activar/desactivar. Con tandas
+        // (setTimeout) React repinta entre tanda y tanda y las casillas que faltaban por
+        // pulsar se quedan fuera del DOM.
+        toClick.forEach(function (click) { click(); });
+        summary();
     }
 
     // -------------------------------------------------------------------- Toggle
-    // Pulsar decenas de casillas en el mismo tick lanza otras tantas llamadas a
-// SteamClient.Apps.SetDLCEnabled y Steam se atasca. Se van en tandas pequenas.
-function clickInChunks(doc, targets, onDone) {
-        var view = viewOf(doc);
-        var CHUNK = 8;
-        var index = 0;
-        function step() {
-            var end = Math.min(index + CHUNK, targets.length);
-            for (; index < end; index++) targets[index]();
-            if (index < targets.length) view.setTimeout(step, 30);
-            else onDone();
-        }
-        step();
-    }
-
+    // Logica de la PRIMERA version publicada en GitHub (commit 7fb44ae): recoger las
+    // casillas de la cuadricula y pulsarlas TODAS EN LA MISMA PASADA.
+    // Antes se pulsaban en tandas de 8 cada 30 ms. Entre tanda y tanda React vuelve a
+    // pintar la fila del DLC que acaba de cambiar y las casillas que faltaban por pulsar
+    // se quedan fuera del DOM: con listas grandes (700+ DLC) solo cambiaban las 8 primeras.
     function toggleDLCs(doc, enable) {
-        var entries = getDlcEntries(doc);
-        if (!entries.length) {
-            notify(doc, 'No se ha encontrado ninguna lista de DLC en esta ventana.', 'error');
-            return;
-        }
-        var targets = entries.filter(function (entry) {
-            return entry.available && entry.enabled !== enable;
-        }).map(function (entry) {
-            return function () { entry.checkbox.click(); };
-        });
+        var table = findDlcTable(doc);
+        var rows = getDlcRows(table);
+        var changed = 0;
 
-        if (!targets.length) {
-            notify(doc, 'No hay ningun DLC que ' + (enable ? 'activar' : 'desactivar') + '.');
+        function apply(checkbox) {
+            if (!checkbox) return;
+            // Mismo criterio que la v1: el estado sale de la propia casilla (aria-checked).
+            if (isCheckboxEnabled(checkbox) === enable) return;
+            checkbox.click();
+            changed++;
+        }
+
+        if (rows.length) {
+            // La casilla se relee de su fila justo antes de pulsarla, por si React la ha
+            // sustituido al repintar la fila anterior.
+            rows.forEach(function (row) {
+                apply(row.querySelector(CHECKBOX_SEL));
+            });
+        } else if (table) {
+            Array.prototype.slice.call(table.querySelectorAll(CHECKBOX_SEL)).forEach(apply);
+        }
+
+        if (!changed) {
+            notify(
+                doc,
+                table
+                    ? 'No hay ningun DLC que ' + (enable ? 'activar' : 'desactivar') + '.'
+                    : 'No se ha encontrado ninguna lista de DLC en esta ventana.',
+                table ? undefined : 'error'
+            );
             return;
         }
-        clickInChunks(doc, targets, function () {
-            notify(doc, targets.length + ' DLC(s) ' + (enable ? 'activados' : 'desactivados') + '.');
-        });
+        notify(doc, changed + ' DLC(s) ' + (enable ? 'activados' : 'desactivados') + '.');
     }
 
     // ------------------------------------------------------------------- Botones

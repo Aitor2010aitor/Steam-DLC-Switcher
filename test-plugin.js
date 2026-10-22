@@ -222,6 +222,80 @@ function buildDlcDom(doc, opts) {
     return grid;
 }
 
+// Cuadricula con muchas filas donde React "repinta" la lista entera cada vez que cambia
+// un DLC: sustituye TODAS las casillas por nodos nuevos. Un clic sobre un nodo que ya no
+// esta montado no llega al componente (React escucha en la raiz), asi que no hace nada.
+function buildToggleDom(doc, count) {
+    const state = [];
+    const clicked = {};
+    const cells = [];
+
+    const grid = doc.createElement('div');
+    grid.setAttribute('role', 'table');
+
+    const headerRow = doc.createElement('div');
+    headerRow.setAttribute('role', 'row');
+    const colHeader = doc.createElement('div');
+    colHeader.setAttribute('role', 'columnheader');
+    colHeader.textContent = 'Instalar';
+    headerRow.appendChild(colHeader);
+    grid.appendChild(headerRow);
+
+    function makeCheckbox(i) {
+        const cell = cells[i];
+        const cb = doc.createElement('div');
+        cb.setAttribute('role', 'checkbox');
+        cb.setAttribute('aria-checked', state[i] ? 'true' : 'false');
+        cb.addEventListener('click', function () {
+            // Nodo muerto: React ya lo sustituyo al repintar -> el clic se pierde.
+            if (cell.childNodes[0] !== cb) return;
+            clicked[i] = (clicked[i] || 0) + 1;
+            state[i] = !state[i];
+            repaint();
+        });
+        return cb;
+    }
+
+    function repaint() {
+        cells.forEach(function (cell, i) {
+            const fresh = makeCheckbox(i);
+            cell.childNodes.splice(0, cell.childNodes.length, fresh);
+            fresh.parentNode = cell;
+        });
+    }
+
+    for (let i = 0; i < count; i++) {
+        state.push(true);
+        const row = doc.createElement('div');
+        row.setAttribute('role', 'row');
+
+        const cell = doc.createElement('div');
+        cell.setAttribute('role', 'cell');
+        cells.push(cell);
+        cell.appendChild(makeCheckbox(i));
+
+        const nameCell = doc.createElement('div');
+        nameCell.setAttribute('role', 'cell');
+        const a = doc.createElement('a');
+        a.setAttribute('href', '#');
+        a.textContent = 'DLC ' + i;
+        nameCell.appendChild(a);
+
+        row.appendChild(cell);
+        row.appendChild(nameCell);
+        grid.appendChild(row);
+    }
+
+    const topRow = doc.createElement('div');
+    const search = doc.createElement('input');
+    search.setAttribute('type', 'text');
+    topRow.appendChild(search);
+
+    doc.body.appendChild(topRow);
+    doc.body.appendChild(grid);
+    return { grid, state, clicked };
+}
+
 // ---------------------------------------------------------------- ejecutar
 const src = fs.readFileSync(path.join(__dirname, 'frontend', 'index.js'), 'utf8');
 const { doc, win, rafQueue } = makeDom();
@@ -323,6 +397,41 @@ console.log('\n=== ESCENARIO STEAM REAL: href="#" + aria-checked erroneo ===');
         check('NO hay lineas sin ID (bug del fichero de 719 lineas)',
             lines.slice(1).every(l => l.split('\t')[0].length > 0));
     }
+}
+
+// ============================================================================
+// Toggle con lista grande y React repintando la lista en cada clic.
+// La version con tandas (8 cada 30 ms) pulsaba nodos que ya no estaban montados:
+// solo cambiaban los 8 primeros. La v1 los pulsa todos en la misma pasada.
+// ============================================================================
+console.log('\n=== ESCENARIO TOGGLE: 60 DLC y React repinta la lista en cada clic ===');
+{
+    const { doc: d3, win: w3, rafQueue: q3 } = makeDom();
+    const data = buildToggleDom(d3, 60);
+    const sb3 = { window: w3, console, Object, Array, Math, JSON, Date, String, RegExp, Uint8Array, TextDecoder };
+    sb3.globalThis = sb3;
+    vm.createContext(sb3);
+    vm.runInContext(src, sb3, { filename: 'plugin.js' });
+    while (q3.length) { const cb = q3.shift(); cb(); }
+
+    const c3 = d3.querySelector('#dlc-toggle-custom-container');
+    const btns3 = descendants(c3).filter(n => n.tagName === 'BUTTON');
+    const off = btns3[1];
+    check('boton Desactivar Todos presente', !!off && /Desactivar/.test(off.textContent),
+        btns3.map(b => b.textContent).join(' | '));
+
+    off.dispatch('click', { target: off, preventDefault() {}, stopPropagation() {} });
+    // Se vacia la cola, que es donde antes vivian las tandas con setTimeout.
+    while (q3.length) { const cb = q3.shift(); cb(); }
+
+    const stillOn = data.state.filter(Boolean).length;
+    check('los 60 DLC se desactivan (ninguna referencia muerta)', stillOn === 0,
+        'quedan ' + stillOn + ' activados');
+
+    const clickedCount = Object.keys(data.clicked).length;
+    check('se pulso cada casilla una vez', clickedCount === 60, 'pulsadas: ' + clickedCount);
+    check('ninguna casilla se pulso dos veces', Object.keys(data.clicked).every(k => data.clicked[k] === 1),
+        JSON.stringify(data.clicked));
 }
 
 console.log('\n' + (fail === 0 ? 'RESULTADO FINAL: TODO OK' : 'RESULTADO FINAL: ' + fail + ' FALLOS'));

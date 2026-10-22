@@ -1,6 +1,8 @@
 <img width="1379" height="627" alt="{2168E9D5-A707-402B-B7C5-405421BDBE15}" src="https://github.com/user-attachments/assets/1bffab29-d5df-48ce-a0b5-5f242f9076f3" />
 
-
+ 
+> [!IMPORTANT]  
+> ***He detectado un bug en esta versión: tarda un poco en desactivar los DLC. Tienes que ir hasta abajo del todo, donde aparecen todos los DLC, para que se puedan desactivar correctamente.***
 
 
 # Steam DLC Switcher (Steam Millennium Plugin)
